@@ -23,6 +23,16 @@ TaxHelpAI/
 - SendGrid-backed reminder engine with node-cron scheduler
 - Next.js dashboard with tabs for chat, filing, refund calculator, documents, and subscription management
 
+## How TaxHelp AI Works
+
+1. **Getting Started** – Visitors land on the multilingual marketing page, choose their preferred language, and create an account or sign in. Successful authentication stores a JWT that the frontend reuses for all subsequent API calls, keeping the session active across page refreshes.
+2. **Dashboard Experience** – Authenticated users reach the dashboard where the active subscription tier is displayed alongside quick links to each tool. Every tab (Chat Assistant, Refund Calculator, File Taxes, Documents, Subscription Plan) lives on its own route and requests data from the backend with loading and error states.
+3. **AI Chat Assistant** – The chat interface sends each question, language choice, and user ID to `/chat/ask`. The backend performs a retrieval-augmented lookup, calls OpenAI when available (or a mock otherwise), optionally translates the answer, and returns IRS citations that are rendered under every response bubble.
+4. **Refund Calculator** – Users provide filing status, income, dependents, deductions, and withholding; the frontend posts the payload to `/api/tax/calculate`, then renders the taxable income, tax due, refund amount, and whether a balance is owed or a refund is expected.
+5. **OCR Filing Workflow** – The File Taxes tab accepts W‑2/1099 uploads. The backend runs OCR (mocking Vision when no key is present), maps results to Form 1040 fields, reuses the tax calculator, generates a pdf-lib summary, stores metadata, and responds with a download link that surfaces in both the immediate results view and the Documents tab for later retrieval.
+6. **Subscription Management** – When a user selects Standard, Pro, or Premium, the frontend requests `/api/payment/create-checkout-session`. In production Stripe redirects to checkout; in development mock URLs are returned. Upon successful payment, the webhook upgrades the user plan, extends the expiry, logs a payment record, and the dashboard reflects the new access level.
+7. **Reminders & Notifications** – A scheduled job checks for plans nearing expiry. If SendGrid credentials exist, reminder emails are sent automatically; otherwise the action is logged for local debugging. Admins can also trigger the job manually through `/api/reminder/send`.
+
 ## Prerequisites
 
 - Node.js 18+
