@@ -1,28 +1,46 @@
 # TaxHelp AI Monorepo
 
-This repository hosts the **TaxHelp AI** project, an AI-assisted U.S. tax preparation platform combining a Next.js frontend, Express backend, and PostgreSQL database with integrations for Stripe, OpenAI, Google Vision, i18next, and pdf-lib.
+This repository hosts the **TaxHelp AI** project, an AI-assisted U.S. tax preparation platform with a Next.js 14 frontend, TypeScript Express backend, PostgreSQL database, and integrations for Stripe, OpenAI, Google Vision, i18next, and pdf-lib.
+
+> **Heads up:** The actively maintained codebase lives in [`TaxHelpAI/`](TaxHelpAI/). The legacy JavaScript prototype under `taxhelp-ai/` remains for reference only.
 
 ## Project layout
 
 ```
-taxhelp-ai/
- ├── frontend/   # Next.js + TailwindCSS app
- ├── backend/    # Express API with PostgreSQL
+TaxHelpAI/
+ ├── frontend/   # Next.js + TailwindCSS client
+ ├── backend/    # Express + TypeScript API
  ├── database/   # SQL schema and seed data
  └── README.md   # Detailed project documentation
 ```
 
-The implementation lives inside the [`taxhelp-ai`](taxhelp-ai/) directory. Refer to its [README](taxhelp-ai/README.md) for setup instructions, environment configuration, and development scripts.
+## How to preview the site locally
 
-## Quick start
-
-1. Install dependencies for the frontend and backend workspaces:
+1. **Install dependencies**
    ```bash
-   cd taxhelp-ai/frontend && npm install
+   cd TaxHelpAI/frontend && npm install
    cd ../backend && npm install
    ```
-2. Copy `.env.example` to `.env` at the project root and provide the required secrets.
-3. In separate terminals run `npm run dev` inside `frontend` and `backend` respectively.
-4. Apply the SQL schema and optional seed data from the `database/` directory to your PostgreSQL instance.
+2. **Configure environment variables**
+   - Copy `TaxHelpAI/.env.example` to `TaxHelpAI/.env` and provide required values (`DATABASE_URL`, `JWT_SECRET`, `LOCAL_UPLOAD_DIR`).
+   - Optionally set API keys for Stripe, OpenAI, Google Vision/Translate, and SendGrid. The app falls back to safe mocks when keys are missing.
+3. **Prepare the database**
+   ```bash
+   cd ../database
+   psql "$DATABASE_URL" -f schema.sql
+   psql "$DATABASE_URL" -f seed.sql   # optional sample data
+   ```
+4. **Start the backend API**
+   ```bash
+   cd ../backend
+   npm run dev
+   ```
+   The server listens on `http://localhost:4000` and exposes REST endpoints for auth, chat, tax filing, Stripe payments, and reminders.
+5. **Start the frontend app** (new terminal)
+   ```bash
+   cd TaxHelpAI/frontend
+   npm run dev
+   ```
+   Next.js serves the UI at `http://localhost:3000`. Sign up or log in to reach the dashboard, then explore the Chat Assistant, Refund Calculator, File Taxes, Documents, and Subscription tabs.
 
-For more details on features, API endpoints, and future enhancements, see [`taxhelp-ai/README.md`](taxhelp-ai/README.md).
+For more feature details, API documentation, and deployment guidance, see [`TaxHelpAI/README.md`](TaxHelpAI/README.md).
