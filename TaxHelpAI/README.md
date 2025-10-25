@@ -1,110 +1,114 @@
 # TaxHelp AI
 
-TaxHelp AI is an end-to-end web application that helps U.S. taxpayers prepare filings with AI-guided chat, automated OCR intake, multilingual support, and subscription billing.
-
-## Project Structure
-
-```
-TaxHelpAI/
-├── .env.example
-├── README.md
-├── backend/        # Express + TypeScript API
-├── frontend/       # Next.js 14 + TailwindCSS client
-└── database/       # PostgreSQL schema & seed files
-```
+A Vercel-native, production-ready SaaS that helps U.S. taxpayers file accurately with AI chat, OCR-to-PDF automation, multilingual UX, Stripe subscriptions, and automated reminders — all inside a single Next.js 14 (App Router) codebase.
 
 ## Features
 
-- JWT authentication with optional Google OAuth hook
-- Multilingual AI chat powered by OpenAI GPT-4o-mini with RAG context and translation
-- Refund calculator applying 2024 IRS tax brackets
-- OCR ingestion for W-2/1099 with pdf-lib Form 1040 summaries
-- Stripe Checkout billing with plan upgrades and webhook handling
-- SendGrid-backed reminder engine with node-cron scheduler
-- Next.js dashboard with tabs for chat, filing, refund calculator, documents, and subscription management
+- **Next.js 14 + Tailwind UI** with marketing page, authenticated dashboard, and responsive tabs for chat, filing, refund calculator, documents, and subscriptions.
+- **NextAuth (Credentials + Google)** with JWT sessions stored client-side, server-protected routes, and Prisma user persistence.
+- **Stripe Checkout** plans (Standard, Pro, Premium) with webhook-driven plan upgrades, payments ledger, and renewal reminders.
+- **AI chat assistant** combining mock IRS RAG snippets, OpenAI GPT-4o-mini, and optional Google Translate localisation.
+- **OCR → Form 1040 PDF** pipeline using Google Vision (or mocks), pdf-lib summaries, and Vercel Blob storage with signed URLs.
+- **Refund calculator** built on 2024 IRS brackets and child tax credits.
+- **SendGrid reminders** triggered manually or via Vercel Cron (daily at 09:00 UTC).
+- **Prisma/PostgreSQL schema** covering users, payments, tax data, documents, and reminders with seed data for two demo users.
+- **Security middleware** adds Helmet-like headers and rate limiting across API endpoints.
+- **Vitest unit coverage** for the tax calculator.
 
-## How TaxHelp AI Works
+## Project structure
 
-1. **Getting Started** – Visitors land on the multilingual marketing page, choose their preferred language, and create an account or sign in. Successful authentication stores a JWT that the frontend reuses for all subsequent API calls, keeping the session active across page refreshes.
-2. **Dashboard Experience** – Authenticated users reach the dashboard where the active subscription tier is displayed alongside quick links to each tool. Every tab (Chat Assistant, Refund Calculator, File Taxes, Documents, Subscription Plan) lives on its own route and requests data from the backend with loading and error states.
-3. **AI Chat Assistant** – The chat interface sends each question, language choice, and user ID to `/chat/ask`. The backend performs a retrieval-augmented lookup, calls OpenAI when available (or a mock otherwise), optionally translates the answer, and returns IRS citations that are rendered under every response bubble.
-4. **Refund Calculator** – Users provide filing status, income, dependents, deductions, and withholding; the frontend posts the payload to `/api/tax/calculate`, then renders the taxable income, tax due, refund amount, and whether a balance is owed or a refund is expected.
-5. **OCR Filing Workflow** – The File Taxes tab accepts W‑2/1099 uploads. The backend runs OCR (mocking Vision when no key is present), maps results to Form 1040 fields, reuses the tax calculator, generates a pdf-lib summary, stores metadata, and responds with a download link that surfaces in both the immediate results view and the Documents tab for later retrieval.
-6. **Subscription Management** – When a user selects Standard, Pro, or Premium, the frontend requests `/api/payment/create-checkout-session`. In production Stripe redirects to checkout; in development mock URLs are returned. Upon successful payment, the webhook upgrades the user plan, extends the expiry, logs a payment record, and the dashboard reflects the new access level.
-7. **Reminders & Notifications** – A scheduled job checks for plans nearing expiry. If SendGrid credentials exist, reminder emails are sent automatically; otherwise the action is logged for local debugging. Admins can also trigger the job manually through `/api/reminder/send`.
+```
+/app
+  /api
+    /auth/[...nextauth]
+    /auth/register
+    /chat/ask
+    /payment/create-checkout-session
+    /payment/webhook
+    /reminder/send
+    /tax/calculate
+    /tax/documents
+    /tax/file
+  /(marketing)/page.tsx
+  /dashboard/page.tsx
+  /globals.css
+  /layout.tsx
+  /login/page.tsx
+  /refund-calculator/page.tsx
+/components
+/lib
+/prisma
+/styles
+/tests
+```
 
 ## Prerequisites
 
 - Node.js 18+
-- PostgreSQL 14+
-- Stripe, OpenAI, Google Vision/Translate, and SendGrid API keys (optional – mocked when absent)
+- PostgreSQL database (Neon/Supabase/Local)
+- Optional: Stripe test account, OpenAI API key, Google Vision credentials, Google OAuth app, SendGrid key, Vercel Blob token
 
-## Environment Setup
+## Environment variables
 
-1. Duplicate `.env.example` as `.env` in the project root.
-2. Fill in the required values (`DATABASE_URL`, `JWT_SECRET`, `LOCAL_UPLOAD_DIR`) and optional API keys.
-3. Ensure the `LOCAL_UPLOAD_DIR` directory is writable for PDF exports.
+Copy `.env.example` to `.env.local` and fill in the following:
 
-## Database
+| Variable | Description |
+| --- | --- |
+| `DATABASE_URL` | Postgres connection string |
+| `NEXTAUTH_SECRET` | Random string for NextAuth JWT encryption |
+| `NEXTAUTH_URL` | Base URL (e.g. `http://localhost:3000`) |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth credentials |
+| `OPENAI_API_KEY` | Optional, enables real GPT-4o-mini calls |
+| `GOOGLE_TRANSLATE_API_KEY` | Optional, enables Google translation |
+| `GOOGLE_VISION_KEY` or `GOOGLE_APPLICATION_CREDENTIALS` | Optional, enables Vision OCR (`GOOGLE_VISION_KEY` expects base64-encoded service account JSON) |
+| `STRIPE_SECRET_KEY` / `STRIPE_PUBLISHABLE_KEY` / `STRIPE_WEBHOOK_SECRET` | Stripe test/live keys |
+| `SENDGRID_API_KEY` | Optional, sends renewal reminders |
+| `BLOB_READ_WRITE_TOKEN` | Server token for Vercel Blob writes |
+| `NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN` | Client token for Vercel Blob uploads |
+
+## Getting started locally
 
 ```bash
-psql "$DATABASE_URL" -f database/schema.sql
-psql "$DATABASE_URL" -f database/seed.sql
-```
-
-## Backend
-
-```bash
-cd backend
+cd TaxHelpAI
 npm install
+npm run prisma:generate
+npm run prisma:migrate -- --name init
+npm run prisma:seed
 npm run dev
 ```
 
-- Runs on `http://localhost:4000` by default.
-- `npm test` executes Jest suites for auth services, tax calculations, and Stripe webhooks.
-- `npm run seed` inserts demo users and payments.
+Visit `http://localhost:3000` to view the marketing page. Use `http://localhost:3000/login` to sign in with the seeded demo users (`demo@taxhelp.ai` / `Password123!`).
 
-### Key Endpoints
-
-| Method | Endpoint | Description |
-| ------ | -------- | ----------- |
-| POST | `/auth/register` | Create a new user |
-| POST | `/auth/login` | Authenticate user and issue JWT |
-| GET | `/auth/user/:id` | Retrieve user profile |
-| POST | `/chat/ask` | Submit question to AI assistant |
-| POST | `/api/tax/calculate` | Calculate refund or balance |
-| POST | `/api/tax/file` | OCR upload + PDF generation |
-| POST | `/api/payment/create-checkout-session` | Start Stripe checkout |
-| POST | `/api/payment/webhook` | Stripe webhook receiver |
-| GET | `/api/documents` | List generated PDFs for authenticated user |
-| POST | `/api/reminder/send` | Trigger reminder email batch |
-
-## Frontend
+## Testing
 
 ```bash
-cd frontend
-npm install
-npm run dev
+npm run test
 ```
 
-- Runs on `http://localhost:3000`.
-- Configure `NEXT_PUBLIC_BACKEND_URL` in `.env.local` if the API uses a non-default URL.
-- Supports English, Spanish, French, Hindi, Arabic, Chinese (Simplified), German, and Russian via `i18next`.
+## Stripe webhook (local)
 
-## Testing Stripe Webhooks Locally
-
-```bash
-stripe listen --forward-to localhost:4000/api/payment/webhook
-```
+1. Install the Stripe CLI and run `stripe listen --forward-to localhost:3000/api/payment/webhook`.
+2. Use the generated signing secret as `STRIPE_WEBHOOK_SECRET` in `.env.local`.
+3. Trigger a checkout with `curl` or via the dashboard subscription tab.
 
 ## Deployment
 
-- **Frontend**: Deploy to Vercel with environment variables `NEXT_PUBLIC_BACKEND_URL` and i18n locales.
-- **Backend**: Deploy to Render or Railway, setting the same `.env` variables and enabling cron workers.
-- **Database**: Host on Neon, Supabase, or any managed Postgres service. Run `database/schema.sql` and `database/seed.sql` once provisioned.
+- **Frontend/backend**: Deploy this repo directly to Vercel. The App Router handles both UI and APIs.
+- **Database**: Use Neon/Supabase and update `DATABASE_URL` in Vercel project settings.
+- **Stripe webhook**: Configure the endpoint in Stripe Dashboard to point at `https://<vercel-domain>/api/payment/webhook`.
+- **Cron**: Vercel automatically provisions the daily reminder job from `vercel.json`.
 
-## Development Tips
+## Seeding demo data
 
-- All external integrations gracefully degrade to mocks when API keys are absent.
-- Helmet, CORS, and rate limiting are enabled by default for security.
-- Uploaded files are stored in `LOCAL_UPLOAD_DIR`. Use cloud storage in production.
+Two demo users are seeded via `npm run prisma:seed`:
+
+- `demo@taxhelp.ai` – Standard plan (30-day expiry)
+- `premium@taxhelp.ai` – Premium plan (60-day expiry)
+
+Both use password `Password123!`.
+
+## Notes
+
+- Without external API keys, AI, OCR, translation, and Stripe fall back to deterministic mocks so the app remains fully navigable during development.
+- Uploads default to in-memory data URLs if a Vercel Blob token is not present.
+- Adjust rate limits or reminder windows in `middleware.ts` and `/api/reminder/send` respectively.
