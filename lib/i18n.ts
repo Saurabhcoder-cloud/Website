@@ -114,6 +114,9 @@ export type Translation = {
       federalTitle: string;
       stateTitle: string;
       benefitsTitle: string;
+      refundLabel: string;
+      likely: string;
+      review: string;
       benefits: string[];
     };
     draft: {
@@ -347,6 +350,9 @@ export const translations: Record<Locale, Translation> = {
         federalTitle: "Federal snapshot",
         stateTitle: "California snapshot",
         benefitsTitle: "Benefits to explore",
+        refundLabel: "Refund",
+        likely: "Likely",
+        review: "Review",
         benefits: ["CalEITC", "SNAP", "Medicaid", "Housing assistance"]
       },
       draft: {
@@ -662,6 +668,9 @@ export const translations: Record<Locale, Translation> = {
         federalTitle: "Resumen federal",
         stateTitle: "Resumen de California",
         benefitsTitle: "Beneficios para explorar",
+        refundLabel: "Reembolso",
+        likely: "Probable",
+        review: "Revisar",
         benefits: ["CalEITC", "SNAP", "Medicaid", "Asistencia de vivienda"]
       },
       draft: {

@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import { demoComputeInput, type DemoComputeOutput, type DemoOcrResponse } from "@/lib/contracts";
 import { taxRules } from "@/lib/taxRules";
 
 const stepOrder = [
@@ -58,31 +59,9 @@ const stepIcons: StepIconMap = {
   complete: PartyPopper
 };
 
-type OcrResponse = {
-  documentId: string;
-  detectedForm: string;
-  confidence: number;
-  normalizedFields: Record<string, string | number>;
-  processingTimeMs: number;
-};
+type OcrResponse = DemoOcrResponse;
 
-type ComputeResponse = {
-  requestId: string;
-  metadata: {
-    receivedAt: string;
-    schemaVersion: string;
-    documents: string[];
-  };
-  federalReturn: {
-    form1040: { taxYear: number; filingStatus: string; lines: Record<string, number> };
-    scheduleC: { grossReceipts: number; expenses: Record<string, number>; netProfit: number };
-    scheduleSE: { seIncome: number; socialSecurityTax: number; medicareTax: number };
-  };
-  stateReturn: {
-    ca540: { agi: number; taxableIncome: number; tax: number; withholding: number; refund: number };
-  };
-  notices: { code: string; level: string; message: string }[];
-};
+type ComputeResponse = DemoComputeOutput;
 
 type QaResponse = {
   answer: string;
@@ -113,14 +92,14 @@ export function DemoPage() {
   useEffect(() => {
     let isMounted = true;
 
-    fetch("/api/demo/ocr")
+    fetch("/api/demo/ocr", { method: "POST" })
       .then((response) => response.json())
       .then((payload: OcrResponse) => {
         if (isMounted) {
           setOcrData(payload);
           const normalized = t.demo.ocr.chips.find((chip) => {
             const sanitize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
-            return sanitize(payload.detectedForm).includes(sanitize(chip));
+            return sanitize(payload.docType).includes(sanitize(chip));
           });
           setSelectedDocType(normalized ?? t.demo.ocr.chips[0]);
         }
@@ -129,7 +108,11 @@ export function DemoPage() {
         console.error("Failed to load OCR mock", error);
       });
 
-    fetch("/api/demo/compute", { method: "POST" })
+    fetch("/api/demo/compute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(demoComputeInput),
+    })
       .then((response) => response.json())
       .then((payload: ComputeResponse) => {
         if (isMounted) {
@@ -187,10 +170,15 @@ export function DemoPage() {
 
   const activeStep = steps[stepIndex];
   const progress = ((stepIndex + 1) / steps.length) * 100;
-  const federalLines = computeData?.federalReturn?.form1040?.lines ?? {};
-  const scheduleC = computeData?.federalReturn?.scheduleC;
-  const scheduleSE = computeData?.federalReturn?.scheduleSE;
-  const ca540 = computeData?.stateReturn?.ca540;
+  const federal = computeData?.federal;
+  const state = computeData?.state;
+  const explainers = computeData?.explainers ?? [];
+  const benefits = computeData?.benefits ?? [];
+  const files = computeData?.files ?? [];
+  const primaryW2 = demoComputeInput.docs.w2[0];
+  const primaryNec = demoComputeInput.docs.nec1099[0];
+  const ssRate = primaryW2 && primaryW2.ss_wages > 0 ? (primaryW2.ss_tax_withheld / primaryW2.ss_wages) * 100 : null;
+  const medicareRate = primaryW2 && primaryW2.medi_wages > 0 ? (primaryW2.medi_tax_withheld / primaryW2.medi_wages) * 100 : null;
 
   const detectedLabel = useMemo(() => {
     const languageLabels: Record<string, string> = {
@@ -204,7 +192,6 @@ export function DemoPage() {
     setStepIndex(Math.max(0, Math.min(index, steps.length - 1)));
   };
 
-  const notices = computeData?.notices ?? [];
 
   return (
     <div className="bg-background py-16">
@@ -319,14 +306,12 @@ export function DemoPage() {
                     {ocrData && (
                       <Card className="bg-muted/60">
                         <CardHeader>
-                          <CardTitle className="text-base">{ocrData.detectedForm}</CardTitle>
-                          <CardDescription>
-                            {(ocrData.confidence * 100).toFixed(1)}% confidence · {(ocrData.processingTimeMs / 1000).toFixed(2)}s
-                          </CardDescription>
+                          <CardTitle className="text-base">{ocrData.docType}</CardTitle>
+                          <CardDescription>{(ocrData.confidence * 100).toFixed(1)}% confidence</CardDescription>
                         </CardHeader>
                         <CardContent>
                           <pre className="overflow-x-auto rounded-lg bg-background p-4 text-xs">
-{JSON.stringify(ocrData.normalizedFields, null, 2)}
+{JSON.stringify(ocrData.fields, null, 2)}
                           </pre>
                         </CardContent>
                       </Card>
@@ -344,6 +329,30 @@ export function DemoPage() {
                           {chip}
                         </Badge>
                       ))}
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <Card className="bg-muted/40">
+                        <CardHeader>
+                          <CardTitle className="text-base">W-2 validation</CardTitle>
+                          <CardDescription>Box 1 → Form 1040 line 1</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-xs text-muted-foreground">
+                          <p>Wages: {primaryW2 ? `$${primaryW2.wages.toLocaleString()}` : "—"}</p>
+                          <p>SS tax rate ≈ {ssRate !== null ? `${ssRate.toFixed(2)}%` : "—"} of Box 3</p>
+                          <p>Medicare rate ≈ {medicareRate !== null ? `${medicareRate.toFixed(2)}%` : "—"} of Box 5</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-muted/40">
+                        <CardHeader>
+                          <CardTitle className="text-base">1099-NEC validation</CardTitle>
+                          <CardDescription>Box 1 → Schedule C line 1</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-xs text-muted-foreground">
+                          <p>Payer: {primaryNec?.payer ?? "—"}</p>
+                          <p>Gross receipts: {primaryNec ? `$${primaryNec.amount.toLocaleString()}` : "—"}</p>
+                          <p>Withholding: {primaryNec ? `$${primaryNec.fed_withheld.toLocaleString()}` : "$0"}</p>
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
                 )}
@@ -391,37 +400,62 @@ export function DemoPage() {
                         <CardHeader>
                           <CardTitle className="text-base text-foreground">{t.demo.benefits.federalTitle}</CardTitle>
                           <CardDescription>
-                            {federalLines["33"] ? `Line 33 → $${federalLines["33"]}` : "Line 33"}
+                            {federal ? `Refund → $${federal.refund}` : t.demo.benefits.refundLabel}
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
                           <ul className="space-y-2 text-xs text-muted-foreground">
-                            <li>Schedule C net profit: ${scheduleC?.netProfit ?? 0}</li>
-                            <li>Schedule SE tax: ${scheduleSE?.socialSecurityTax ?? 0}</li>
+                            <li>AGI: ${federal?.agi ?? 0}</li>
+                            <li>Tax: ${federal?.tax ?? 0}</li>
+                            <li>Credits: ${federal?.credits ?? 0}</li>
+                            <li>Forms: {federal?.forms.join(", ") ?? "—"}</li>
                           </ul>
                         </CardContent>
                       </Card>
                       <Card className="bg-muted/40">
                         <CardHeader>
                           <CardTitle className="text-base text-foreground">{t.demo.benefits.stateTitle}</CardTitle>
-                          <CardDescription>{ca540 ? `Refund → $${ca540.refund}` : "Refund"}</CardDescription>
+                          <CardDescription>
+                            {state ? `Refund → $${state.refund}` : t.demo.benefits.refundLabel}
+                          </CardDescription>
                         </CardHeader>
                         <CardContent>
                           <ul className="space-y-2 text-xs text-muted-foreground">
-                            <li>AGI: ${ca540?.agi ?? 0}</li>
-                            <li>Tax: ${ca540?.tax ?? 0}</li>
+                            <li>Jurisdiction: {state?.jurisdiction ?? "—"}</li>
+                            <li>Tax: ${state?.tax ?? 0}</li>
+                            <li>Credits: ${state?.credits ?? 0}</li>
+                            <li>Forms: {state?.forms.join(", ") ?? "—"}</li>
                           </ul>
                         </CardContent>
                       </Card>
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-foreground">{t.demo.benefits.benefitsTitle}</h3>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {t.demo.benefits.benefits.map((benefit) => (
-                          <Badge key={benefit} variant="outline" className="border-primary/40 text-primary">
-                            {benefit}
-                          </Badge>
-                        ))}
+                      <div className="mt-2 space-y-2">
+                        {benefits.length > 0 ? (
+                          benefits.map((benefit) => (
+                            <div
+                              key={benefit.program}
+                              className="flex items-start justify-between rounded-lg border border-border bg-background/80 p-3 text-xs text-muted-foreground"
+                            >
+                              <div>
+                                <p className="font-medium text-foreground">{benefit.program}</p>
+                                <p>{benefit.reason}</p>
+                              </div>
+                              <Badge variant={benefit.likely ? "gradient" : "outline"}>
+                                {benefit.likely ? t.demo.benefits.likely : t.demo.benefits.review}
+                              </Badge>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {t.demo.benefits.benefits.map((benefit) => (
+                              <Badge key={benefit} variant="outline" className="border-primary/40 text-primary">
+                                {benefit}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -455,17 +489,71 @@ export function DemoPage() {
                         </li>
                       ))}
                     </ul>
+                    {(federal || state) && (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {federal && (
+                          <Card className="bg-muted/40">
+                            <CardHeader>
+                              <CardTitle className="text-sm font-semibold text-foreground">Federal snapshot</CardTitle>
+                              <CardDescription>Refund ${federal.refund}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-1 text-xs text-muted-foreground">
+                              <p>Tax: ${federal.tax}</p>
+                              <p>Credits: ${federal.credits}</p>
+                              <p>Forms: {federal.forms.join(", ")}</p>
+                            </CardContent>
+                          </Card>
+                        )}
+                        {state && (
+                          <Card className="bg-muted/40">
+                            <CardHeader>
+                              <CardTitle className="text-sm font-semibold text-foreground">California snapshot</CardTitle>
+                              <CardDescription>Refund ${state.refund}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-1 text-xs text-muted-foreground">
+                              <p>Tax: ${state.tax}</p>
+                              <p>Credits: ${state.credits}</p>
+                              <p>Forms: {state.forms.join(", ")}</p>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    )}
+                    {explainers.length > 0 && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-semibold text-foreground">Line explainers</h3>
+                        <ul className="space-y-2 text-xs text-muted-foreground">
+                          {explainers.map((explainer) => (
+                            <li key={explainer.line} className="rounded-lg border border-border bg-background/80 p-3">
+                              <p className="text-[11px] uppercase text-primary">{explainer.line}</p>
+                              <p>{explainer.text}</p>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-3">
-                      {t.demo.summary.downloads.slice(0, 2).map((download) => (
-                        <Button key={download} variant="gradient" size="sm">
-                          {download}
-                        </Button>
-                      ))}
+                      {files.length > 0
+                        ? files.map((file) => (
+                            <Button key={`${file.type}-${file.url}`} variant="gradient" size="sm">
+                              {`Download ${file.type.toUpperCase()}`}
+                            </Button>
+                          ))
+                        : t.demo.summary.downloads.slice(0, 2).map((download) => (
+                            <Button key={download} variant="gradient" size="sm">
+                              {download}
+                            </Button>
+                          ))}
                       <Button variant="outline" size="sm" disabled>
                         {t.demo.summary.downloads[2]}
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">{t.demo.summary.comingSoon}</p>
+                    {files.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {`Demo links expire in ${Math.floor(files[0].expires_in / 86400)} days.`}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -554,22 +642,6 @@ export function DemoPage() {
                   </Card>
                 ))}
               </div>
-              {notices.length > 0 && (
-                <Card id="consent" className="bg-muted/20">
-                  <CardHeader>
-                    <CardTitle className="text-base text-foreground">Notices</CardTitle>
-                    <CardDescription>Mock alerts generated from compute output.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm text-muted-foreground">
-                    {notices.map((notice) => (
-                      <div key={notice.code} className="rounded-lg border border-border bg-background/60 p-4">
-                        <p className="text-xs uppercase tracking-wide text-primary">{notice.code}</p>
-                        <p className="mt-1 text-sm text-foreground">{notice.message}</p>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
             </section>
           </section>
         </div>
