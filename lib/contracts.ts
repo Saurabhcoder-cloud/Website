@@ -101,7 +101,7 @@ export const demoComputeInput: DemoComputeInput = {
     w2: [
       {
         ssn: "xxx-xx-6789",
-        ein: "12-3456789",
+        ein: "***-**-6789",
         wages: 52000,
         fed_withheld: 4500,
         ss_wages: 52000,
@@ -197,7 +197,7 @@ export const demoOcrResponse: DemoOcrResponse = {
   docType: "W2",
   fields: {
     employer_name: "ACME Delivery LLC",
-    employer_ein: "12-3456789",
+    employer_ein: "***-**-6789",
     employee_ssn: "xxx-xx-6789",
     wages: 52000,
     federal_withholding: 4500,

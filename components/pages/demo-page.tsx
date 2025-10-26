@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BadgeCheck,
   CheckCircle2,
@@ -26,6 +26,17 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/components/ui/sonner";
 import { demoComputeInput, type DemoComputeOutput, type DemoOcrResponse } from "@/lib/contracts";
 import { taxRules } from "@/lib/taxRules";
 
@@ -69,39 +80,78 @@ type QaResponse = {
   model: string;
 };
 
+const SENSITIVE_KEYS = ["ssn", "ein"];
+
+const maskTaxId = (value: string) => {
+  const digits = value.replace(/[^0-9]/g, "");
+  if (digits.length < 4) {
+    return "***-**-****";
+  }
+  const lastFour = digits.slice(-4);
+  return `***-**-${lastFour}`;
+};
+
+const sanitizeField = (key: string, value: string | number) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const normalizedKey = key.toLowerCase();
+  if (SENSITIVE_KEYS.some((sensitiveKey) => normalizedKey.includes(sensitiveKey))) {
+    return maskTaxId(value);
+  }
+
+  return value;
+};
+
 export function DemoPage() {
   const { detectedLocale } = useLocale();
   const t = useTranslations();
+  const docChips = useMemo(() => t.demo.ocr.chips, [t]);
+  const qaPrompts = useMemo(() => t.demo.qa.prompts, [t]);
+  const consentOptions = useMemo(() => t.demo.consent.options, [t]);
+  const defaultRetention = consentOptions[1] ?? consentOptions[0] ?? "30 days";
   const [stepIndex, setStepIndex] = useState(0);
   const [uploadedDocs, setUploadedDocs] = useState(2);
-  const [selectedDocType, setSelectedDocType] = useState<string>(t.demo.ocr.chips[0]);
-  const [qaSelection, setQaSelection] = useState(t.demo.qa.prompts[0]);
+  const [selectedDocType, setSelectedDocType] = useState<string>(docChips[0] ?? "");
+  const [qaSelection, setQaSelection] = useState(qaPrompts[0] ?? "");
   const [qaData, setQaData] = useState<QaResponse | null>(null);
   const [qaLoading, setQaLoading] = useState(false);
   const [ocrData, setOcrData] = useState<OcrResponse | null>(null);
   const [computeData, setComputeData] = useState<ComputeResponse | null>(null);
-  const [retention, setRetention] = useState(t.demo.consent.options[1]);
+  const [retention, setRetention] = useState(defaultRetention);
   const [consentAccepted, setConsentAccepted] = useState(false);
+  const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
+  const [pendingDownload, setPendingDownload] = useState<string | null>(null);
+  const [modalConsentChecked, setModalConsentChecked] = useState(false);
+  const [dataCleared, setDataCleared] = useState(false);
 
   useEffect(() => {
-    setQaSelection(t.demo.qa.prompts[0]);
-    setRetention(t.demo.consent.options[1]);
+    setQaSelection(qaPrompts[0] ?? "");
+    setRetention(defaultRetention);
     setConsentAccepted(false);
-  }, [t]);
+    setModalConsentChecked(false);
+  }, [qaPrompts, defaultRetention]);
 
   useEffect(() => {
     let isMounted = true;
+
+    if (dataCleared) {
+      return () => {
+        isMounted = false;
+      };
+    }
 
     fetch("/api/demo/ocr", { method: "POST" })
       .then((response) => response.json())
       .then((payload: OcrResponse) => {
         if (isMounted) {
           setOcrData(payload);
-          const normalized = t.demo.ocr.chips.find((chip) => {
+          const normalized = docChips.find((chip) => {
             const sanitize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
             return sanitize(payload.docType).includes(sanitize(chip));
           });
-          setSelectedDocType(normalized ?? t.demo.ocr.chips[0]);
+          setSelectedDocType(normalized ?? docChips[0] ?? "");
         }
       })
       .catch((error) => {
@@ -117,6 +167,7 @@ export function DemoPage() {
       .then((payload: ComputeResponse) => {
         if (isMounted) {
           setComputeData(payload);
+          setDataCleared(false);
         }
       })
       .catch((error) => {
@@ -126,15 +177,21 @@ export function DemoPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [dataCleared, docChips]);
 
   useEffect(() => {
-    setSelectedDocType(t.demo.ocr.chips[0]);
-  }, [t]);
+    setSelectedDocType(docChips[0] ?? "");
+  }, [docChips]);
 
   useEffect(() => {
     const controller = new AbortController();
     setQaLoading(true);
+
+    if (!qaSelection) {
+      setQaData(null);
+      setQaLoading(false);
+      return () => controller.abort();
+    }
 
     fetch("/api/ai/explain", {
       method: "POST",
@@ -157,6 +214,15 @@ export function DemoPage() {
     return () => controller.abort();
   }, [qaSelection]);
 
+  useEffect(() => {
+    if (!isConsentModalOpen) {
+      setPendingDownload(null);
+      return;
+    }
+
+    setModalConsentChecked(consentAccepted);
+  }, [isConsentModalOpen, consentAccepted]);
+
   const steps = useMemo(
     () =>
       stepOrder.map((id) => ({
@@ -170,15 +236,25 @@ export function DemoPage() {
 
   const activeStep = steps[stepIndex];
   const progress = ((stepIndex + 1) / steps.length) * 100;
-  const federal = computeData?.federal;
-  const state = computeData?.state;
-  const explainers = computeData?.explainers ?? [];
-  const benefits = computeData?.benefits ?? [];
-  const files = computeData?.files ?? [];
-  const primaryW2 = demoComputeInput.docs.w2[0];
-  const primaryNec = demoComputeInput.docs.nec1099[0];
+  const federal = !dataCleared ? computeData?.federal : undefined;
+  const state = !dataCleared ? computeData?.state : undefined;
+  const explainers = !dataCleared ? computeData?.explainers ?? [] : [];
+  const benefits = !dataCleared ? computeData?.benefits ?? [] : [];
+  const files = !dataCleared ? computeData?.files ?? [] : [];
+  const primaryW2 = !dataCleared ? demoComputeInput.docs.w2[0] : undefined;
+  const primaryNec = !dataCleared ? demoComputeInput.docs.nec1099[0] : undefined;
   const ssRate = primaryW2 && primaryW2.ss_wages > 0 ? (primaryW2.ss_tax_withheld / primaryW2.ss_wages) * 100 : null;
   const medicareRate = primaryW2 && primaryW2.medi_wages > 0 ? (primaryW2.medi_tax_withheld / primaryW2.medi_wages) * 100 : null;
+  const sanitizedOcrFields = useMemo(() => {
+    if (!ocrData) {
+      return null;
+    }
+
+    return Object.entries(ocrData.fields).reduce<Record<string, string | number>>((accumulator, [key, value]) => {
+      accumulator[key] = sanitizeField(key, value);
+      return accumulator;
+    }, {});
+  }, [ocrData]);
 
   const detectedLabel = useMemo(() => {
     const languageLabels: Record<string, string> = {
@@ -192,9 +268,58 @@ export function DemoPage() {
     setStepIndex(Math.max(0, Math.min(index, steps.length - 1)));
   };
 
+  const handleExportClick = useCallback(
+    (label: string) => {
+      if (dataCleared) {
+        toast.error(t.demo.consent.exportDisabled);
+        return;
+      }
+
+      setPendingDownload(label);
+      setIsConsentModalOpen(true);
+    },
+    [dataCleared, t]
+  );
+
+  const handleConsentConfirm = useCallback(() => {
+    if (!modalConsentChecked) {
+      return;
+    }
+
+    setConsentAccepted(true);
+    setIsConsentModalOpen(false);
+    if (pendingDownload) {
+      toast.success(t.demo.consent.toastSuccess.replace("{item}", pendingDownload));
+    }
+    setPendingDownload(null);
+  }, [modalConsentChecked, pendingDownload, t]);
+
+  const handleDeleteData = useCallback(() => {
+    setOcrData(null);
+    setComputeData(null);
+    setQaData(null);
+    setUploadedDocs(0);
+    setConsentAccepted(false);
+    setModalConsentChecked(false);
+    setDataCleared(true);
+    setStepIndex(0);
+    setQaSelection(qaPrompts[0] ?? "");
+    setSelectedDocType(docChips[0] ?? "");
+    toast.success(t.demo.consent.toastCleared);
+  }, [docChips, qaPrompts, t]);
+
+  const handleRestoreData = useCallback(() => {
+    setUploadedDocs(2);
+    setDataCleared(false);
+    setConsentAccepted(false);
+    setModalConsentChecked(false);
+    toast.success(t.demo.consent.toastRestored);
+  }, [t]);
+
 
   return (
-    <div className="bg-background py-16">
+    <>
+      <div className="bg-background py-16">
       <div className="container mx-auto px-4">
         <div className="flex flex-col gap-6 lg:flex-row">
           <aside className="lg:w-72">
@@ -303,7 +428,7 @@ export function DemoPage() {
                         </Button>
                       ))}
                     </div>
-                    {ocrData && (
+                    {ocrData && sanitizedOcrFields && (
                       <Card className="bg-muted/60">
                         <CardHeader>
                           <CardTitle className="text-base">{ocrData.docType}</CardTitle>
@@ -311,7 +436,7 @@ export function DemoPage() {
                         </CardHeader>
                         <CardContent>
                           <pre className="overflow-x-auto rounded-lg bg-background p-4 text-xs">
-{JSON.stringify(ocrData.fields, null, 2)}
+{JSON.stringify(sanitizedOcrFields, null, 2)}
                           </pre>
                         </CardContent>
                       </Card>
@@ -535,12 +660,24 @@ export function DemoPage() {
                     <div className="flex flex-wrap gap-3">
                       {files.length > 0
                         ? files.map((file) => (
-                            <Button key={`${file.type}-${file.url}`} variant="gradient" size="sm">
+                            <Button
+                              key={`${file.type}-${file.url}`}
+                              variant="gradient"
+                              size="sm"
+                              onClick={() => handleExportClick(`Download ${file.type.toUpperCase()}`)}
+                              disabled={dataCleared}
+                            >
                               {`Download ${file.type.toUpperCase()}`}
                             </Button>
                           ))
                         : t.demo.summary.downloads.slice(0, 2).map((download) => (
-                            <Button key={download} variant="gradient" size="sm">
+                            <Button
+                              key={download}
+                              variant="gradient"
+                              size="sm"
+                              onClick={() => handleExportClick(download)}
+                              disabled={dataCleared}
+                            >
                               {download}
                             </Button>
                           ))}
@@ -549,10 +686,16 @@ export function DemoPage() {
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">{t.demo.summary.comingSoon}</p>
-                    {files.length > 0 && (
+                    {files.length > 0 && !dataCleared && (
                       <p className="text-xs text-muted-foreground">
-                        {`Demo links expire in ${Math.floor(files[0].expires_in / 86400)} days.`}
+                        {t.demo.summary.expiration.replace(
+                          "{days}",
+                          `${Math.floor(files[0].expires_in / 86400)}`
+                        )}
                       </p>
+                    )}
+                    {dataCleared && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400">{t.demo.consent.clearedNotice}</p>
                     )}
                   </div>
                 )}
@@ -573,7 +716,7 @@ export function DemoPage() {
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-foreground">{t.demo.consent.retentionLabel}</Label>
                       <RadioGroup value={retention} onValueChange={(value) => setRetention(value)} className="flex flex-wrap gap-3">
-                        {t.demo.consent.options.map((option) => (
+                        {consentOptions.map((option) => (
                           <Label
                             key={option}
                             className={`flex cursor-pointer items-center justify-center rounded-xl border px-4 py-2 text-sm transition ${
@@ -586,9 +729,22 @@ export function DemoPage() {
                         ))}
                       </RadioGroup>
                     </div>
-                    <Button variant="outline" size="sm">
-                      {t.demo.consent.deleteNow}
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" onClick={handleDeleteData} disabled={dataCleared}>
+                        {t.demo.consent.deleteNow}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRestoreData}
+                        disabled={!dataCleared}
+                      >
+                        {t.demo.consent.restore}
+                      </Button>
+                    </div>
+                    {dataCleared && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400">{t.demo.consent.clearedNotice}</p>
+                    )}
                   </div>
                 )}
 
@@ -646,6 +802,56 @@ export function DemoPage() {
           </section>
         </div>
       </div>
-    </div>
+      <AlertDialog open={isConsentModalOpen} onOpenChange={setIsConsentModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.demo.consent.modalTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.demo.consent.modalDescription.replace(
+                "{item}",
+                pendingDownload ?? t.demo.summary.downloads[0]
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="modal-consent"
+                checked={modalConsentChecked}
+                onCheckedChange={(checked) => setModalConsentChecked(Boolean(checked))}
+              />
+              <Label htmlFor="modal-consent" className="text-sm text-foreground">
+                {t.demo.consent.acknowledgement}
+              </Label>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">{t.demo.consent.retentionLabel}</Label>
+              <RadioGroup value={retention} onValueChange={(value) => setRetention(value)} className="flex flex-wrap gap-3">
+                {consentOptions.map((option) => (
+                  <Label
+                    key={`modal-${option}`}
+                    className={`flex cursor-pointer items-center justify-center rounded-xl border px-4 py-2 text-sm transition ${
+                      retention === option ? "border-primary bg-primary/10" : "border-border hover:bg-muted/60"
+                    }`}
+                  >
+                    <RadioGroupItem value={option} className="sr-only" />
+                    {option}
+                  </Label>
+                ))}
+              </RadioGroup>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.demo.consent.modalCancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConsentConfirm} disabled={!modalConsentChecked}>
+              {t.demo.consent.modalCta.replace(
+                "{item}",
+                pendingDownload ?? t.demo.summary.downloads[0]
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

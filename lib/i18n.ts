@@ -322,7 +322,7 @@ export const translations: Record<Locale, Translation> = {
         toggleLabel: "Switch language"
       },
       upload: {
-        description: "Drag in W-2s, 1099s, or receipts up to 10MB each. Files stay encrypted in this demo.",
+        description: "Drag in W-2s, 1099s, or receipts up to 10MB each. Files stay encrypted and never leave your browser in this demo.",
         accepted: "Accepted: PDF, JPG, PNG · Max 10MB",
         encryptedBadge: "Encrypted (demo)"
       },
@@ -363,6 +363,7 @@ export const translations: Record<Locale, Translation> = {
         description: "Downloadable artifacts keep teams aligned while e-file is in development.",
         downloads: ["Download PDF (demo)", "Download JSON (demo)", "E-file bundle (coming soon)"],
         comingSoon: "E-file submission launches with additional consent.",
+        expiration: "Demo links expire in {days} days.",
         refundDrivers: [
           "Standard deduction selected—worth $13,850 over itemizing.",
           "Gig mileage deduction increases refund by $1,240.",
@@ -374,7 +375,17 @@ export const translations: Record<Locale, Translation> = {
         retentionLabel: "Retention window",
         options: ["7 days", "30 days", "90 days"],
         deleteNow: "Delete now",
-        acknowledgement: "I agree to the consent and retention terms."
+        restore: "Restore sample data",
+        acknowledgement: "I agree to the consent and retention terms.",
+        clearedNotice: "Demo data cleared locally. Restore to generate fresh mock files.",
+        modalTitle: "Confirm consent before export",
+        modalDescription: "We only generate {item} after you opt in. Nothing is stored once you delete or leave the demo.",
+        modalCta: "Confirm & export {item}",
+        modalCancel: "Cancel",
+        toastSuccess: "Consent saved. {item} unlocked (demo only).",
+        toastCleared: "Demo data deleted from this browser.",
+        toastRestored: "Sample data restored. Refreshing results.",
+        exportDisabled: "Demo data is cleared—restore it to preview exports again."
       },
       complete: {
         description: "Next steps once you connect the live engine.",
@@ -472,6 +483,30 @@ export const translations: Record<Locale, Translation> = {
             ]
           },
           {
+            title: "Consent & control",
+            items: [
+              "You choose the retention window (7, 30, or 90 days) before export.",
+              "Delete-now in the demo clears data immediately from your browser.",
+              "We honor Do Not Track by disabling analytics automatically."
+            ]
+          },
+          {
+            title: "Deletion & disputes",
+            items: [
+              "Request deletion at any time via privacy@taxhelp.ai.",
+              "We document responses within 30 days and keep audit evidence for regulators.",
+              "You may appeal a decision by contacting our Data Protection Officer."
+            ]
+          },
+          {
+            title: "Processors",
+            items: [
+              "Vercel hosts our web infrastructure in the United States.",
+              "OpenRouter provides AI responses with PII stripping at the edge.",
+              "Google Tag Manager only runs after you opt in to analytics."
+            ]
+          },
+          {
             title: "Your rights",
             items: [
               "Request access, correction, or deletion via privacy@taxhelp.ai.",
@@ -500,6 +535,14 @@ export const translations: Record<Locale, Translation> = {
               "Keep login credentials confidential.",
               "Notify us immediately of unauthorized access.",
               "We secure data with encryption in transit and at rest."
+            ]
+          },
+          {
+            title: "E-file requirements",
+            items: [
+              "Electronic filing launches with additional consent dialogs and identity verification.",
+              "We will request government ID or KBA checks where IRS rules require it.",
+              "Demo data never transmits to the IRS or FTB until you explicitly approve."
             ]
           },
           {
@@ -640,7 +683,7 @@ export const translations: Record<Locale, Translation> = {
         toggleLabel: "Cambiar idioma"
       },
       upload: {
-        description: "Arrastra W-2, 1099 o recibos de hasta 10 MB cada uno. Los archivos permanecen cifrados en esta demo.",
+        description: "Arrastra W-2, 1099 o recibos de hasta 10 MB cada uno. Los archivos quedan cifrados y no salen de tu navegador en esta demo.",
         accepted: "Aceptado: PDF, JPG, PNG · Máximo 10 MB",
         encryptedBadge: "Cifrado (demo)"
       },
@@ -681,6 +724,7 @@ export const translations: Record<Locale, Translation> = {
         description: "Los archivos descargables mantienen alineados a los equipos mientras se finaliza el e-file.",
         downloads: ["Descargar PDF (demo)", "Descargar JSON (demo)", "Paquete e-file (próximamente)"],
         comingSoon: "El envío e-file se lanzará con consentimiento adicional.",
+        expiration: "Los enlaces demo expiran en {days} días.",
         refundDrivers: [
           "Se eligió la deducción estándar: vale $13,850 frente a detallar.",
           "La deducción por millas gig aumenta el reembolso en $1,240.",
@@ -692,7 +736,17 @@ export const translations: Record<Locale, Translation> = {
         retentionLabel: "Periodo de retención",
         options: ["7 días", "30 días", "90 días"],
         deleteNow: "Eliminar ahora",
-        acknowledgement: "Acepto los términos de consentimiento y retención."
+        restore: "Restaurar datos de muestra",
+        acknowledgement: "Acepto los términos de consentimiento y retención.",
+        clearedNotice: "Datos de la demo borrados localmente. Restaura para generar archivos simulados de nuevo.",
+        modalTitle: "Confirma consentimiento antes de exportar",
+        modalDescription: "Solo generamos {item} después de que aceptes. Nada se guarda cuando borras o cierras la demo.",
+        modalCta: "Confirmar y exportar {item}",
+        modalCancel: "Cancelar",
+        toastSuccess: "Consentimiento guardado. {item} listo (solo demo).",
+        toastCleared: "Datos de la demo eliminados de este navegador.",
+        toastRestored: "Datos de muestra restaurados. Actualizando resultados.",
+        exportDisabled: "Los datos demo están borrados; restáuralos para volver a exportar."
       },
       complete: {
         description: "Siguientes pasos cuando conectes el motor en vivo.",
@@ -790,6 +844,30 @@ export const translations: Record<Locale, Translation> = {
             ]
           },
           {
+            title: "Consentimiento y control",
+            items: [
+              "Antes de exportar eliges si conservar 7, 30 o 90 días.",
+              "La acción Eliminar ahora borra de inmediato los datos en tu navegador.",
+              "Si usas Do Not Track, la analítica se desactiva automáticamente."
+            ]
+          },
+          {
+            title: "Eliminación y recursos",
+            items: [
+              "Puedes solicitar borrado en privacy@taxhelp.ai en cualquier momento.",
+              "Respondemos dentro de 30 días y documentamos la auditoría para autoridades.",
+              "Tienes derecho a apelar escribiendo a nuestro responsable de protección de datos."
+            ]
+          },
+          {
+            title: "Encargados de tratamiento",
+            items: [
+              "Vercel aloja nuestra infraestructura web en EE. UU.",
+              "OpenRouter entrega respuestas de IA sin PII en el borde.",
+              "Google Tag Manager solo se ejecuta si aceptas la analítica."
+            ]
+          },
+          {
             title: "Tus derechos",
             items: [
               "Solicita acceso, corrección o eliminación en privacy@taxhelp.ai.",
@@ -818,6 +896,14 @@ export const translations: Record<Locale, Translation> = {
               "Mantén confidenciales tus credenciales de acceso.",
               "Notifícanos de inmediato cualquier acceso no autorizado.",
               "Protegemos los datos con cifrado en tránsito y en reposo."
+            ]
+          },
+          {
+            title: "Requisitos e-file",
+            items: [
+              "El envío electrónico incluirá consentimiento adicional e identificación verificable.",
+              "Solicitaremos identificación oficial o verificaciones KBA cuando lo exija el IRS.",
+              "Los datos de la demo nunca se envían al IRS o FTB sin tu aprobación explícita."
             ]
           },
           {

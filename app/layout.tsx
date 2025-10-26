@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 
 import "./globals.css";
 
-import { GoogleTagManager } from "@/components/analytics/gtm";
+import { AnalyticsManager } from "@/components/analytics/analytics-manager";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
@@ -65,7 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} flex min-h-screen flex-col bg-background text-foreground`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <LocaleProvider>
-            <GoogleTagManager />
+            <AnalyticsManager />
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
