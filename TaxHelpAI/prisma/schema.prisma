@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int        @id @default(autoincrement())
+  name        String?
+  email       String?    @unique
+  password    String?
+  plan        String     @default("free")
+  planExpiry  DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  accounts    Account[]
+  sessions    Session[]
+  payments    Payment[]
+  taxData     TaxData[]
+  documents   Document[]
+  reminders   Reminder[]
+}
+
+model Account {
+  id                 Int       @id @default(autoincrement())
+  userId             Int
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?   @db.Text
+  access_token       String?   @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?   @db.Text
+  session_state      String?
+  oauth_token_secret String?
+  oauth_token        String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Payment {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  plan        String
+  amountCents Int
+  currency    String   @default("usd")
+  status      String
+  providerRef String
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TaxData {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  filingStatus   String
+  dependents     Int      @default(0)
+  annualIncome   Float
+  federalWithheld Float
+  deductions     Float?   @default(0)
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  kind      String
+  blobKey   String
+  meta      Json
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Reminder {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  kind      String
+  dueDate   DateTime
+  sentAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind])
+}
