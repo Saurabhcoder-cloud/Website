@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, Headset, Mail, MapPin, Phone, Send } from "lucide-react";
+import { Mail, MessageCircle, Send } from "lucide-react";
 
+import { useTranslations } from "@/components/i18n/locale-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,70 +11,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-const offices = [
-  {
-    title: "San Francisco HQ",
-    address: "1355 Market Street, Suite 900, San Francisco, CA 94103",
-    phone: "(415) 555-0199"
-  },
-  {
-    title: "Los Angeles (Operations)",
-    address: "6300 Wilshire Blvd, Floor 12, Los Angeles, CA 90048",
-    phone: "(213) 555-0143"
-  }
-] as const;
-
-const channels = [
-  {
-    title: "Sales & Partnerships",
-    description: "Launch strategic deployments with payroll providers, banks, and preparer networks.",
-    icon: Building2,
-    email: "hello@taxhelp.ai"
-  },
-  {
-    title: "Support",
-    description: "Existing customers can reach our dedicated Slack channel or email support.",
-    icon: Headset,
-    email: "support@taxhelp.ai"
-  },
-  {
-    title: "Press",
-    description: "For media inquiries, podcast requests, and speaking engagements.",
-    icon: Mail,
-    email: "press@taxhelp.ai"
-  }
-] as const;
-
 export function ContactPage() {
+  const t = useTranslations();
   const [submitted, setSubmitted] = useState(false);
 
   return (
-    <main className="bg-background py-16" id="support">
-      <div className="container mx-auto px-4">
+    <main className="bg-background py-16">
+      <div className="container mx-auto space-y-12 px-4">
         <div className="mx-auto max-w-3xl text-center">
           <Badge variant="outline" className="border-primary/40 text-primary">
-            We reply within one business day
+            {t.contact.heroSubtitle}
           </Badge>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">Talk to the TaxHelp AI team</h1>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Share your goals and we&apos;ll coordinate a tailored walkthrough. Include any compliance requirements so we can prepare documentation in advance.
-          </p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+            {t.contact.heroTitle}
+          </h1>
         </div>
 
-        <section className="mt-12 grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="grid gap-6 lg:grid-cols-[1.2fr,1fr]">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl text-foreground">Send us a message</CardTitle>
-              <CardDescription>
-                No data is persisted in this demo form—connect your backend endpoint when you&apos;re ready for production.
-              </CardDescription>
+              <CardTitle className="text-2xl text-foreground">{t.contact.formTitle}</CardTitle>
+              <CardDescription>{t.contact.formDescription}</CardDescription>
             </CardHeader>
             <CardContent>
               {submitted ? (
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>Thank you! A team member will follow up shortly.</p>
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <p>{t.contact.success}</p>
                   <Button variant="ghost" onClick={() => setSubmitted(false)}>
-                    Send another message
+                    {t.common.buttons.contact}
                   </Button>
                 </div>
               ) : (
@@ -86,37 +51,29 @@ export function ContactPage() {
                 >
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <Label htmlFor="name">Name</Label>
+                      <Label htmlFor="name">{t.contact.labels.name}</Label>
                       <Input id="name" name="name" required autoComplete="name" />
                     </div>
                     <div>
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email">{t.contact.labels.email}</Label>
                       <Input id="email" name="email" type="email" required autoComplete="email" />
                     </div>
                   </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <Label htmlFor="company">Company</Label>
-                      <Input id="company" name="company" autoComplete="organization" />
-                    </div>
-                    <div>
-                      <Label htmlFor="role">Role</Label>
-                      <Input id="role" name="role" />
-                    </div>
+                  <div>
+                    <Label htmlFor="topic">{t.contact.labels.topic}</Label>
+                    <Input id="topic" name="topic" required />
                   </div>
                   <div>
-                    <Label htmlFor="message">What would you like to explore?</Label>
-                    <Textarea id="message" name="message" required rows={5} />
+                    <Label htmlFor="message">{t.contact.labels.message}</Label>
+                    <Textarea id="message" name="message" rows={5} required />
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <input type="checkbox" id="consent" required className="h-4 w-4 rounded border border-border" />
-                    <label htmlFor="consent" className="text-left">
-                      I agree to the data handling described in the <a href="/legal/privacy" className="text-primary underline">Privacy Policy</a>.
-                    </label>
+                    <label htmlFor="consent">{t.contact.labels.consent}</label>
                   </div>
                   <Button type="submit" className="inline-flex items-center gap-2">
-                    Send message
-                    <Send className="h-4 w-4" />
+                    {t.contact.submit}
+                    <Send className="h-4 w-4" aria-hidden />
                   </Button>
                 </form>
               )}
@@ -126,44 +83,53 @@ export function ContactPage() {
           <div className="space-y-6">
             <Card className="bg-muted/40">
               <CardHeader>
-                <CardTitle className="text-lg text-foreground">Direct lines</CardTitle>
-                <CardDescription>Choose the channel that fits your request.</CardDescription>
+                <CardTitle className="text-lg text-foreground">Email</CardTitle>
+                <CardDescription>{t.common.buttons.contact}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {channels.map((channel) => (
-                  <div key={channel.title} className="rounded-xl border border-border bg-background/60 p-4">
-                    <channel.icon className="h-5 w-5 text-primary" aria-hidden />
-                    <p className="mt-2 text-sm font-semibold text-foreground">{channel.title}</p>
-                    <p className="text-sm text-muted-foreground">{channel.description}</p>
-                    <a className="mt-2 block text-sm text-primary underline" href={`mailto:${channel.email}`}>
-                      {channel.email}
-                    </a>
-                  </div>
-                ))}
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-foreground">
+                  <Mail className="h-4 w-4 text-primary" aria-hidden />
+                  <a href={`mailto:${t.contact.supportEmail}`} className="underline">
+                    {t.contact.supportEmail}
+                  </a>
+                </div>
+                <div className="flex items-center gap-2 text-foreground">
+                  <Mail className="h-4 w-4 text-primary" aria-hidden />
+                  <a href={`mailto:${t.contact.partnersEmail}`} className="underline">
+                    {t.contact.partnersEmail}
+                  </a>
+                </div>
               </CardContent>
             </Card>
 
             <Card className="bg-muted/20">
               <CardHeader>
-                <CardTitle className="text-lg text-foreground">Office locations</CardTitle>
-                <CardDescription>Meet us in person for roadmap sessions and compliance reviews.</CardDescription>
+                <CardTitle className="text-lg text-foreground">Messaging</CardTitle>
+                <CardDescription>{t.contact.heroSubtitle}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {offices.map((office) => (
-                  <div key={office.title} className="rounded-xl border border-border bg-background/60 p-4">
-                    <MapPin className="h-5 w-5 text-primary" aria-hidden />
-                    <p className="mt-2 text-sm font-semibold text-foreground">{office.title}</p>
-                    <p className="text-sm text-muted-foreground">{office.address}</p>
-                    <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="h-4 w-4 text-primary" aria-hidden />
-                      {office.phone}
-                    </p>
-                  </div>
-                ))}
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
+                <a
+                  href="https://t.me/taxhelpai"
+                  className="flex items-center gap-2 text-foreground underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MessageCircle className="h-4 w-4 text-primary" aria-hidden />
+                  {t.contact.telegramLabel}
+                </a>
+                <a
+                  href="https://wa.me/18001234567"
+                  className="flex items-center gap-2 text-foreground underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MessageCircle className="h-4 w-4 text-primary" aria-hidden />
+                  {t.contact.whatsappLabel}
+                </a>
               </CardContent>
             </Card>
           </div>
-        </section>
+        </div>
       </div>
     </main>
   );

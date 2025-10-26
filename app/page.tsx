@@ -1,50 +1,17 @@
-import Link from "next/link";
-import { ArrowRight, ClipboardList, GraduationCap, Handshake, ShieldCheck, Sparkles, Truck } from "lucide-react";
+"use client";
 
+import Link from "next/link";
+import { ArrowRight, CheckCircle2, Languages, ShieldCheck, Sparkles, Users } from "lucide-react";
+
+import { LocaleToggle } from "@/components/i18n/locale-toggle";
+import { useTranslations } from "@/components/i18n/locale-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const personas = [
-  {
-    title: "Gig workers",
-    description:
-      "Connect DoorDash, Uber, Lyft, Instacart, and platform 1099 data. Mileage logs and platform fees map straight into Schedule C.",
-    icon: Truck
-  },
-  {
-    title: "Students",
-    description:
-      "Upload 1098-T, scholarships, and part-time W-2s. We surface education credits and dependent scenarios automatically.",
-    icon: GraduationCap
-  },
-  {
-    title: "Retirees",
-    description:
-      "Blend Social Security statements, retirement distributions, and RMD notices with Medicare deductions and taxability checks.",
-    icon: Handshake
-  }
-];
-
-const highlights = [
-  {
-    title: "Explainable by design",
-    description: "Every data flow—from W-2 box 1 to Form 1040 line 1a—is mapped with citations you can hand to compliance.",
-    icon: ClipboardList
-  },
-  {
-    title: "Consent-first workflow",
-    description: "Retention preferences and disclosure receipts are captured alongside every upload for SOC 2 evidence.",
-    icon: ShieldCheck
-  },
-  {
-    title: "Ready for production",
-    description: "Mock APIs mirror the JSON that our upcoming tax engine will ship, so backend integration stays painless.",
-    icon: Sparkles
-  }
-];
-
 export default function HomePage() {
+  const t = useTranslations();
+
   return (
     <div className="bg-background">
       <section className="relative overflow-hidden py-24">
@@ -52,70 +19,59 @@ export default function HomePage() {
         <div className="container relative z-10 mx-auto flex flex-col gap-12 px-4 lg:flex-row lg:items-center">
           <div className="space-y-6 lg:w-1/2">
             <Badge variant="outline" className="border-primary/50 text-primary">
-              USA-focused tax co-pilot
+              {t.home.heroBadge}
             </Badge>
             <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-              TaxHelp AI explains every step from upload to filed return.
+              {t.home.heroTitle}
             </h1>
-            <p className="text-lg text-muted-foreground">
-              Guided demos show how we ingest W-2 and 1099 forms, apply federal and California rules, and surface draft returns
-              with clear consent controls—no production data required.
-            </p>
+            <p className="text-lg text-muted-foreground">{t.home.heroSubtitle}</p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" variant="gradient" asChild>
-                <Link href="/demo" className="flex items-center gap-2">
-                  Try the 10-step demo
+              <Button size="lg" asChild>
+                <Link href="/pricing" className="flex items-center gap-2">
+                  {t.home.primaryCta}
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/security">Review security posture</Link>
+                <Link href="/demo">{t.home.secondaryCta}</Link>
               </Button>
             </div>
-            <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-primary" />
-                SOC 2 controls ready
-              </div>
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-tax-green" />
-                IRS & FTB mappings built-in
-              </div>
-              <div className="flex items-center gap-2">
-                <Handshake className="h-4 w-4 text-tax-gold" />
-                Human preparer handoff
-              </div>
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-primary" aria-hidden />
+                SOC 2-ready evidence
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-tax-green" aria-hidden />
+                1040 · Schedule C/SE · CA 540
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Users className="h-4 w-4 text-tax-gold" aria-hidden />
+                Built for gig workers, students & retirees
+              </span>
             </div>
           </div>
+
           <Card className="lg:w-5/12">
             <CardHeader>
-              <CardTitle className="text-2xl">Demo flow at a glance</CardTitle>
-              <CardDescription>Preview what prospects see inside the interactive walkthrough.</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Languages className="h-5 w-5 text-primary" aria-hidden />
+                {t.demo.heroTitle}
+              </CardTitle>
+              <CardDescription>{t.demo.heroSubtitle}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm text-muted-foreground">
-              <ol className="space-y-3">
-                {[
-                  "Language + consent disclosure",
-                  "Document upload & OCR",
-                  "Classification with confidence scores",
-                  "Data validation against IRS schemas",
-                  "AI Q&A (OpenRouter sandbox)",
-                  "Tax & benefits summary",
-                  "Draft 1040 + Schedule C/SE",
-                  "CA Form 540 alignment",
-                  "Export to PDF/JSON",
-                  "Final retention confirmation"
-                ].map((step, index) => (
-                  <li key={step} className="flex items-start gap-3">
-                    <span className="mt-1 h-6 w-6 rounded-full bg-primary/10 text-center text-xs font-semibold leading-6 text-primary">
-                      {index + 1}
-                    </span>
-                    <span>{step}</span>
-                  </li>
+            <CardContent className="space-y-6 text-sm text-muted-foreground">
+              <p>{t.demo.stepDescriptions.language}</p>
+              <LocaleToggle />
+              <div className="grid gap-2 sm:grid-cols-3">
+                {t.home.miniSteps.map((step) => (
+                  <Badge key={step} variant="outline" className="justify-center border-primary/40 text-primary">
+                    {step}
+                  </Badge>
                 ))}
-              </ol>
-              <p>
-                Mock APIs now, production tax engine next. Share the flow with stakeholders without exposing PII.
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t.home.mappingSubtitle}
               </p>
             </CardContent>
           </Card>
@@ -124,10 +80,14 @@ export default function HomePage() {
 
       <section className="border-t border-b bg-muted/40 py-16">
         <div className="container mx-auto grid gap-6 px-4 md:grid-cols-3">
-          {personas.map((persona) => (
+          <div className="md:col-span-3">
+            <h2 className="text-center text-3xl font-semibold text-foreground sm:text-4xl">
+              {t.home.personasTitle}
+            </h2>
+          </div>
+          {t.home.personas.map((persona) => (
             <Card key={persona.title} className="border-primary/30">
               <CardHeader className="space-y-3">
-                <persona.icon className="h-8 w-8 text-primary" />
                 <CardTitle className="text-xl text-foreground">{persona.title}</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">
                   {persona.description}
@@ -139,75 +99,62 @@ export default function HomePage() {
       </section>
 
       <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="grid gap-10 lg:grid-cols-[2fr,1fr] lg:items-start">
-            <div className="space-y-6">
-              <Badge variant="outline" className="border-primary/50 text-primary">
-                Compliance-ready details
-              </Badge>
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-                Built for tax teams that need audit trails and faster onboarding.
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Our library of mappings covers W-2, 1099-NEC/K/MISC, and flows into Form 1040, Schedule C/SE, and California Form
-                540. Each mapping includes references so tax leaders can validate the automation in minutes.
-              </p>
-              <div className="grid gap-6 sm:grid-cols-2">
-                {highlights.map((item) => (
-                  <Card key={item.title} className="h-full bg-muted/40">
-                    <CardHeader className="space-y-3">
-                      <item.icon className="h-6 w-6 text-primary" />
-                      <CardTitle className="text-lg">{item.title}</CardTitle>
-                      <CardDescription className="text-sm text-muted-foreground">
-                        {item.description}
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                ))}
-              </div>
-            </div>
-            <Card className="bg-background/80">
-              <CardHeader>
-                <CardTitle className="text-xl">What&apos;s included</CardTitle>
-                <CardDescription>Demo-ready assets deploy with every preview build.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-muted-foreground">
-                <ul className="space-y-2">
-                  <li>• Vercel preview links per pull request</li>
-                  <li>• Mock OCR + compute APIs with production schemas</li>
-                  <li>• Consent receipts & retention controls</li>
-                  <li>• SEO tags + optional Google Tag Manager</li>
-                  <li>• Stripe-ready pricing CTA hook</li>
-                </ul>
-                <Button variant="ghost" asChild>
-                  <Link href="/pricing" className="flex items-center gap-2">
-                    See pricing tiers
-                    <ArrowRight className="h-4 w-4" aria-hidden />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+        <div className="container mx-auto space-y-10 px-4">
+          <div className="space-y-4 text-center">
+            <Badge variant="outline" className="border-primary/50 text-primary">
+              {t.home.valueHeading}
+            </Badge>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {t.home.valueCards.map((card) => (
+              <Card key={card.title} className="border-primary/30">
+                <CardHeader>
+                  <CardTitle className="text-lg text-foreground">{card.title}</CardTitle>
+                  <CardDescription>{card.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="border-t bg-muted/30 py-16">
-        <div className="container mx-auto flex flex-col gap-8 px-4 text-center">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Ready to put TaxHelp AI in front of your stakeholders?
-          </h2>
-          <p className="mx-auto max-w-2xl text-muted-foreground">
-            Spin up a Vercel preview, invite decision-makers into the guided demo, and connect with our team to plan backend
-            integration across tax, benefits, and retention workflows.
-          </p>
-          <div className="flex flex-col justify-center gap-3 sm:flex-row">
-            <Button size="lg" variant="success" asChild>
-              <Link href="/contact">Talk to our team</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/legal/privacy">Review privacy commitments</Link>
-            </Button>
+      <section className="border-t border-b bg-muted/40 py-20">
+        <div className="container mx-auto grid gap-10 px-4 lg:grid-cols-[1.2fr,1fr] lg:items-start">
+          <div className="space-y-6">
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              {t.home.stepsTitle}
+            </h2>
+            <p className="text-lg text-muted-foreground">{t.home.stepsSubtitle}</p>
+            <ul className="space-y-3 text-sm text-muted-foreground">
+              {t.home.mappingBullets.map((bullet) => (
+                <li key={bullet} className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-1 h-4 w-4 text-primary" aria-hidden />
+                  <span>{bullet}</span>
+                </li>
+              ))}
+            </ul>
           </div>
+          <Card className="bg-background">
+            <CardHeader>
+              <CardTitle className="text-xl text-foreground">{t.home.mappingTitle}</CardTitle>
+              <CardDescription>{t.home.mappingSubtitle}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {t.home.miniSteps.map((step, index) => (
+                <div key={step} className="flex items-center justify-between rounded-lg border border-border/60 px-4 py-3">
+                  <span className="text-sm font-medium text-foreground">{step}</span>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary">
+                    {index + 1}
+                  </Badge>
+                </div>
+              ))}
+              <div className="rounded-lg bg-muted/40 p-4 text-xs text-muted-foreground">
+                <p>
+                  {t.demo.progressSubtitle}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
     </div>

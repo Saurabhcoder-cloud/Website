@@ -6,6 +6,7 @@ import "./globals.css";
 import { GoogleTagManager } from "@/components/analytics/gtm";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -63,11 +64,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} flex min-h-screen flex-col bg-background text-foreground`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <GoogleTagManager />
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <Toaster richColors position="top-right" />
+          <LocaleProvider>
+            <GoogleTagManager />
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <Toaster richColors position="top-right" />
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -127,7 +127,4 @@ export type LanguageOption = {
 export const supportedLanguages: LanguageOption[] = [
   { code: 'en', label: 'English' },
   { code: 'es', label: 'Spanish' },
-  { code: 'zh', label: 'Chinese (Simplified)' },
-  { code: 'tl', label: 'Tagalog' },
-  { code: 'vi', label: 'Vietnamese' },
 ];
