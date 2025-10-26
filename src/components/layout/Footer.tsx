@@ -1,54 +1,71 @@
-
 import { Link } from 'react-router-dom';
-import { Calculator } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
+
+const footerLinks = [
+  {
+    title: 'Product',
+    items: [
+      { label: 'Demo', to: '/demo' },
+      { label: 'Pricing', to: '/pricing' },
+      { label: 'Security', to: '/security' },
+    ],
+  },
+  {
+    title: 'Company',
+    items: [
+      { label: 'Contact', to: '/contact' },
+      { label: 'Privacy Policy', to: '/legal/privacy' },
+      { label: 'Terms of Service', to: '/legal/terms' },
+    ],
+  },
+  {
+    title: 'Resources',
+    items: [
+      { label: 'Tax Rules Mapping', to: '/demo#rules' },
+      { label: 'Consent & Retention', to: '/demo#consent' },
+      { label: 'Support', to: '/contact#support' },
+    ],
+  },
+];
 
 export default function Footer() {
   return (
-    <footer className="border-t bg-muted/50">
+    <footer className="border-t bg-muted/40 text-muted-foreground">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-                <Calculator className="w-5 h-5 text-white" />
+        <div className="grid gap-10 md:grid-cols-4">
+          <div className="space-y-4 text-foreground">
+            <Link to="/" className="flex items-center space-x-2" aria-label="TaxHelp AI home">
+              <div className="gradient-primary flex h-9 w-9 items-center justify-center rounded-lg">
+                <ShieldCheck className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold">TaxHelp AI</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              AI-powered tax assistance for U.S. taxpayers. File with confidence.
+              <span className="text-xl font-semibold tracking-tight">TaxHelp AI</span>
+            </Link>
+            <p className="text-sm">
+              Explainable tax automation built for U.S. gig workers, students, retirees, and the professionals who support them.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Vercel hosted • SOC2-ready infrastructure • U.S. data residency
             </p>
           </div>
-          
-          <div>
-            <h3 className="font-semibold mb-4">Features</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/refund-calculator" className="hover:text-foreground">Refund Calculator</Link></li>
-              <li><Link to="/chat" className="hover:text-foreground">AI Assistant</Link></li>
-              <li><Link to="/file-taxes" className="hover:text-foreground">File Taxes</Link></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="font-semibold mb-4">Support</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground">Help Center</a></li>
-              <li><a href="#" className="hover:text-foreground">Contact Us</a></li>
-              <li><a href="#" className="hover:text-foreground">Privacy Policy</a></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="font-semibold mb-4">Company</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground">About</a></li>
-              <li><a href="#" className="hover:text-foreground">Blog</a></li>
-              <li><a href="#" className="hover:text-foreground">Careers</a></li>
-            </ul>
-          </div>
+
+          {footerLinks.map((section) => (
+            <div key={section.title}>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">{section.title}</h3>
+              <ul className="mt-4 space-y-2">
+                {section.items.map((item) => (
+                  <li key={item.label}>
+                    <Link to={item.to} className="text-sm transition-colors hover:text-primary">
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-        
-        <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 TaxHelp AI. All rights reserved.</p>
+
+        <div className="mt-10 border-t pt-6 text-center text-xs">
+          <p>&copy; {new Date().getFullYear()} TaxHelp AI. All rights reserved.</p>
         </div>
       </div>
     </footer>
