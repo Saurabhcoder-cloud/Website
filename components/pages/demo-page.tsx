@@ -408,6 +408,7 @@ export function DemoPage() {
                   </CardTitle>
                   <CardDescription>{activeStep.description}</CardDescription>
                 </CardHeader>
+
                 <CardContent className="space-y-6">
                   {/* LANGUAGE */}
                   {activeStep.id === "language" && (
@@ -889,7 +890,7 @@ export function DemoPage() {
         </div>
       </div>
 
-      {/* Modals (outside main layout but inside Fragment) */}
+      {/* Modals */}
       <ConsentModal
         open={isConsentModalOpen}
         onOpenChange={setIsConsentModalOpen}
