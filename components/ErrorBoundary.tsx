@@ -45,7 +45,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         name: error.name,
         message: error.message,
         stack: error.stack,
-        componentStack: errorInfo.componentStack,
+        // ✅ Fix: ensure componentStack is always a string
+        componentStack: errorInfo.componentStack ?? "",
         timestamp: new Date().toISOString(),
       };
 
@@ -58,18 +59,19 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     }
   }
 
-  triggerErrorOverlay(err) {
+  triggerErrorOverlay(err: Error | null) {
     const ErrorOverlay = customElements.get("vite-error-overlay");
 
     if (ErrorOverlay) {
       const overlay = document.querySelector(
         "vite-error-overlay"
-      ) as HTMLElement & { err: Error };
+      ) as (HTMLElement & { err: Error }) | null;
+
       if (overlay) {
-        overlay.err = err;
-      } else {
-        const overlay = new ErrorOverlay(err);
-        document.body.appendChild(overlay);
+        overlay.err = err as Error;
+      } else if (err) {
+        const newOverlay = new (ErrorOverlay as any)(err);
+        document.body.appendChild(newOverlay);
       }
     }
   }
