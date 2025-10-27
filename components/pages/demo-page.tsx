@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import Link from "next/link";
 import {
   BadgeCheck,
@@ -59,7 +59,7 @@ const stepOrder = [
 ] as const;
 
 type StepId = (typeof stepOrder)[number];
-type StepIconMap = Record<StepId, React.ComponentType<{ className?: string }>>;
+type StepIconMap = Record<StepId, ComponentType<{ className?: string }>>;
 
 const stepIcons: StepIconMap = {
   language: Languages,
@@ -100,9 +100,7 @@ const maskTaxId = (value: string) => {
 const sanitizeField = (key: string, value: string | number) => {
   if (typeof value !== "string") return value;
   const normalizedKey = key.toLowerCase();
-  if (SENSITIVE_KEYS.some((sensitiveKey) => normalizedKey.includes(sensitiveKey))) {
-    return maskTaxId(value);
-  }
+  if (SENSITIVE_KEYS.some((s) => normalizedKey.includes(s))) return maskTaxId(value);
   return value;
 };
 
@@ -141,9 +139,7 @@ export function DemoPage() {
 
   useEffect(() => {
     isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
+    return () => { isMountedRef.current = false; };
   }, []);
 
   const generateFileDescriptor = useCallback((file: File): UploadFileDescriptor => {
@@ -186,7 +182,7 @@ export function DemoPage() {
       if (!isMountedRef.current) return;
       setOcrData(payload);
       const normalized = docChips.find((chip) => {
-        const sanitize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const sanitize = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, "");
         return sanitize(payload.docType).includes(sanitize(chip));
       });
       setSelectedDocType(normalized ?? docChips[0] ?? "");
@@ -196,7 +192,7 @@ export function DemoPage() {
       setOcrData(null);
       setOcrError(true);
     }
-  }, [docChips, isMountedRef]);
+  }, [docChips]);
 
   const loadCompute = useCallback(async () => {
     setComputeError(false);
@@ -217,7 +213,7 @@ export function DemoPage() {
       setComputeData(null);
       setComputeError(true);
     }
-  }, [isMountedRef]);
+  }, []);
 
   useEffect(() => {
     if (dataCleared) {
@@ -229,9 +225,7 @@ export function DemoPage() {
     loadCompute();
   }, [dataCleared, loadOcr, loadCompute]);
 
-  useEffect(() => {
-    setSelectedDocType(docChips[0] ?? "");
-  }, [docChips]);
+  useEffect(() => { setSelectedDocType(docChips[0] ?? ""); }, [docChips]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -249,10 +243,8 @@ export function DemoPage() {
       body: JSON.stringify({ question: qaSelection }),
       signal: controller.signal
     })
-      .then((response) => response.json())
-      .then((payload: QaResponse) => {
-        setQaData(payload);
-      })
+      .then((r) => r.json())
+      .then((payload: QaResponse) => setQaData(payload))
       .catch((error: any) => {
         if (error?.name !== "AbortError") {
           console.error("Failed to load AI explanation", error);
@@ -287,18 +279,13 @@ export function DemoPage() {
     () =>
       steps.map((step, index) => {
         const status = (index < stepIndex ? "complete" : index === stepIndex ? "current" : "upcoming") as StepperStep["status"];
-        return {
-          id: step.id,
-          label: step.title,
-          description: step.description,
-          status
-        };
+        return { id: step.id, label: step.title, description: step.description, status };
       }),
     [steps, stepIndex]
   );
 
   const activeStep = steps[stepIndex];
-  const Icon = activeStep.icon as React.ComponentType<{ className?: string }>;
+  const Icon = activeStep.icon as ComponentType<{ className?: string }>;
 
   const progress = ((stepIndex + 1) / steps.length) * 100;
   const federal = !dataCleared && !computeError ? computeData?.federal : undefined;
@@ -397,9 +384,7 @@ export function DemoPage() {
                     steps={stepperSteps}
                     onStepSelect={(id) => {
                       const targetIndex = stepOrder.findIndex((stepId) => stepId === id);
-                      if (targetIndex !== -1) {
-                        goToStep(targetIndex);
-                      }
+                      if (targetIndex !== -1) goToStep(targetIndex);
                     }}
                   />
                 </CardContent>
@@ -424,6 +409,7 @@ export function DemoPage() {
                   <CardDescription>{activeStep.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* LANGUAGE */}
                   {activeStep.id === "language" && (
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">{t.demo.language.detection}</p>
@@ -438,6 +424,7 @@ export function DemoPage() {
                     </div>
                   )}
 
+                  {/* UPLOAD */}
                   {activeStep.id === "upload" && (
                     <div className="space-y-4">
                       <UploadDropzone
@@ -460,27 +447,20 @@ export function DemoPage() {
                     </div>
                   )}
 
+                  {/* OCR */}
                   {activeStep.id === "ocr" && (
                     <div className="space-y-4">
                       {ocrError && (
                         <Banner
                           variant="danger"
                           title={t.demo.ocr.error}
-                          action={
-                            <Button variant="outline" size="sm" onClick={() => loadOcr()}>
-                              {t.demo.ocr.retry}
-                            </Button>
-                          }
+                          action={<Button variant="outline" size="sm" onClick={() => loadOcr()}>{t.demo.ocr.retry}</Button>}
                         />
                       )}
                       {!ocrError && !ocrData && (
                         <Banner
                           title={t.demo.ocr.manualEntry}
-                          action={
-                            <Button variant="ghost" size="sm" onClick={() => goToStep(manualEntryStepIndex)}>
-                              {t.demo.ocr.skip}
-                            </Button>
-                          }
+                          action={<Button variant="ghost" size="sm" onClick={() => goToStep(manualEntryStepIndex)}>{t.demo.ocr.skip}</Button>}
                         />
                       )}
                       <p className="text-sm text-muted-foreground">{t.demo.ocr.description}</p>
@@ -520,6 +500,7 @@ export function DemoPage() {
                     </div>
                   )}
 
+                  {/* EXTRACT */}
                   {activeStep.id === "extract" && (
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">{t.demo.extract.description}</p>
@@ -558,6 +539,7 @@ export function DemoPage() {
                     </div>
                   )}
 
+                  {/* QA */}
                   {activeStep.id === "qa" && (
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">{t.demo.qa.description}</p>
@@ -593,6 +575,7 @@ export function DemoPage() {
                     </div>
                   )}
 
+                  {/* BENEFITS */}
                   {activeStep.id === "benefits" && (
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">{t.demo.benefits.description}</p>
@@ -600,11 +583,7 @@ export function DemoPage() {
                         <Banner
                           variant="danger"
                           title={t.demo.summary.error}
-                          action={
-                            <Button variant="outline" size="sm" onClick={() => loadCompute()}>
-                              {t.demo.summary.retry}
-                            </Button>
-                          }
+                          action={<Button variant="outline" size="sm" onClick={() => loadCompute()}>{t.demo.summary.retry}</Button>}
                         />
                       )}
                       <div className="grid gap-4 lg:grid-cols-2">
@@ -612,9 +591,7 @@ export function DemoPage() {
                           <CardHeader>
                             <CardTitle className="text-base text-foreground">{t.demo.benefits.federalTitle}</CardTitle>
                             <CardDescription>
-                              {federal
-                                ? `${t.demo.benefits.refundLabel} → ${formatCurrency(federal.refund)}`
-                                : t.demo.benefits.placeholder}
+                              {federal ? `${t.demo.benefits.refundLabel} → ${formatCurrency(federal.refund)}` : t.demo.benefits.placeholder}
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
@@ -630,9 +607,7 @@ export function DemoPage() {
                           <CardHeader>
                             <CardTitle className="text-base text-foreground">{t.demo.benefits.stateTitle}</CardTitle>
                             <CardDescription>
-                              {state
-                                ? `${t.demo.benefits.refundLabel} → ${formatCurrency(state.refund)}`
-                                : t.demo.benefits.placeholder}
+                              {state ? `${t.demo.benefits.refundLabel} → ${formatCurrency(state.refund)}` : t.demo.benefits.placeholder}
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
@@ -680,6 +655,7 @@ export function DemoPage() {
                     </div>
                   )}
 
+                  {/* DRAFT */}
                   {activeStep.id === "draft" && (
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">{t.demo.draft.description}</p>
@@ -700,6 +676,7 @@ export function DemoPage() {
                     </div>
                   )}
 
+                  {/* SUMMARY */}
                   {activeStep.id === "summary" && (
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">{t.demo.summary.description}</p>
@@ -707,11 +684,7 @@ export function DemoPage() {
                         <Banner
                           variant="danger"
                           title={t.demo.summary.error}
-                          action={
-                            <Button variant="outline" size="sm" onClick={() => loadCompute()}>
-                              {t.demo.summary.retry}
-                            </Button>
-                          }
+                          action={<Button variant="outline" size="sm" onClick={() => loadCompute()}>{t.demo.summary.retry}</Button>}
                         />
                       )}
                       <ul className="space-y-3 text-sm text-muted-foreground">
@@ -807,6 +780,7 @@ export function DemoPage() {
                     </div>
                   )}
 
+                  {/* CONSENT */}
                   {activeStep.id === "consent" && (
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">{t.demo.consent.description}</p>
@@ -848,6 +822,7 @@ export function DemoPage() {
                     </div>
                   )}
 
+                  {/* COMPLETE */}
                   {activeStep.id === "complete" && (
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">{t.demo.complete.description}</p>
@@ -870,6 +845,7 @@ export function DemoPage() {
                     </div>
                   )}
                 </CardContent>
+
                 <CardFooter className="flex justify-between">
                   <Button variant="ghost" disabled={stepIndex === 0} onClick={() => goToStep(stepIndex - 1)}>
                     Previous
@@ -883,6 +859,7 @@ export function DemoPage() {
                 </CardFooter>
               </Card>
 
+              {/* RULES */}
               <section id="rules" className="space-y-6">
                 <header>
                   <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t.home.mappingTitle}</h2>
@@ -912,18 +889,13 @@ export function DemoPage() {
         </div>
       </div>
 
+      {/* Modals (outside main layout but inside Fragment) */}
       <ConsentModal
         open={isConsentModalOpen}
         onOpenChange={setIsConsentModalOpen}
         title={t.demo.consent.modalTitle}
-        description={t.demo.consent.modalDescription.replace(
-          "{item}",
-          pendingDownload ?? t.demo.summary.downloads[0]
-        )}
-        confirmLabel={t.demo.consent.modalCta.replace(
-          "{item}",
-          pendingDownload ?? t.demo.summary.downloads[0]
-        )}
+        description={t.demo.consent.modalDescription.replace("{item}", pendingDownload ?? t.demo.summary.downloads[0])}
+        confirmLabel={t.demo.consent.modalCta.replace("{item}", pendingDownload ?? t.demo.summary.downloads[0])}
         cancelLabel={t.demo.consent.modalCancel}
         acknowledgement={t.demo.consent.acknowledgement}
         checked={modalConsentChecked}
