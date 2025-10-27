@@ -1,0 +1,47 @@
+# Enforce text handling for vector assets so Git does not treat them as binary.
+*.svg text eol=lf
+
+# Treat common binary formats as binary so they are skipped in diffs and merges.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.bmp  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.psd  binary
+*.ai   binary
+*.eps  binary
+
+# Archives and installers
+*.zip  binary
+*.gz   binary
+*.tgz  binary
+*.bz2  binary
+*.7z   binary
+*.rar  binary
+*.tar  binary
+*.pkg  binary
+*.msi  binary
+*.exe  binary
+*.dll  binary
+*.bin  binary
+
+# Audio and video
+*.mp4  binary
+*.mov  binary
+*.avi  binary
+*.mkv  binary
+*.webm binary
+*.mp3  binary
+*.wav  binary
+*.flac binary
+*.aac  binary
+
+# Fonts
+*.ttf  binary
+*.otf  binary
+*.woff binary
+*.woff2 binary
+*.eot  binary
